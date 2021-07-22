@@ -7,9 +7,9 @@ namespace EnvironmentSensorDashboard
 {
     public class PiEnvMonSensorResponse
     {
-        PiEnvMonSensorDevice System { get; set; }
-        PiEnvMonCPUSensorReading CPUSensorReading { get; set; }
-        List<PiEnvMonHumiditySensorReading> HumidityReadings { get; set; }
-        List<PiEnvMonTemperatureSensorReading> TemperatureReadings { get; set; }       
+        public PiEnvMonSensorDevice System { get; set; }
+        public PiEnvMonCPUSensorReading CPUSensorReading { get; set; }
+        public List<PiEnvMonHumiditySensorReading> HumidityReadings { get; set; }
+        public List<PiEnvMonTemperatureSensorReading> TemperatureReadings { get; set; }       
     }    
 }
