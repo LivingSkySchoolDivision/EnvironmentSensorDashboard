@@ -21,11 +21,13 @@ namespace EnvironmentSensorDashboard.Data
         {
             return new PiEnvMonSensorDevice()
             {
+                DatabaseId = dataReader["id"].ToString().Trim().ToInt(),
                 Name = dataReader["name"].ToString().Trim(),
                 Description = dataReader["description"].ToString().Trim(),
                 Model = dataReader["model"].ToString().Trim(),
                 Serial = dataReader["serial"].ToString().Trim(),
-                IPAddress = dataReader["ip_address"].ToString().Trim()
+                IPAddress = dataReader["ip_address"].ToString().Trim(),
+                IsEnabled = dataReader["is_enabled"].ToString().Trim().ToBool()
             };
         }
 
@@ -97,6 +99,32 @@ namespace EnvironmentSensorDashboard.Data
             }
 
             return returnMe;
+        }
+
+        public void Update(PiEnvMonSensorDevice device) 
+        {            
+            using (SqlConnection connection = new SqlConnection(_dbConnectionString))
+            {
+                using (SqlCommand sqlCommand = new SqlCommand
+                {
+                    Connection = connection,
+                    CommandType = CommandType.Text,
+                    CommandText = "UPDATE SensorDevices SET ip_address=@DIP, is_enabled=@ISENABLED, name=@DNAME, description=@DDESC, model=@DMODEL, serial=@DSERIAL, last_seen_utc=@DLASTSEEN WHERE id=@DEVICEID;"
+                })
+                {
+                    sqlCommand.Parameters.AddWithValue("DEVICEID", device.DatabaseId);
+                    sqlCommand.Parameters.AddWithValue("DIP", device.IPAddress);
+                    sqlCommand.Parameters.AddWithValue("ISENABLED", device.IsEnabled);
+                    sqlCommand.Parameters.AddWithValue("DNAME", device.Name);
+                    sqlCommand.Parameters.AddWithValue("DDESC", device.Description);
+                    sqlCommand.Parameters.AddWithValue("DMODEL", device.Model);
+                    sqlCommand.Parameters.AddWithValue("DSERIAL", device.Serial);
+                    sqlCommand.Parameters.AddWithValue("DLASTSEEN", device.LastSeenUTC);
+                    sqlCommand.Connection.Open();
+                    sqlCommand.ExecuteNonQuery();
+                    sqlCommand.Connection.Close();
+                }
+            }
         }
 
 

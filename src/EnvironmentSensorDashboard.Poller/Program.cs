@@ -13,7 +13,11 @@ namespace EnvironmentSensorDashboard.Poller
 {
     class Program
     {
-        private static HttpClient _httpClient = new HttpClient();
+        private const int _sleepMinutes = 10;
+
+        private static HttpClient _httpClient = new HttpClient() {
+            Timeout = new TimeSpan(0,0,5)
+        };
 
         private static async Task<PiEnvMonSensorResponse> GetPiData(string ip)
         {
@@ -60,31 +64,51 @@ namespace EnvironmentSensorDashboard.Poller
             // Load stuff from database
             PiEnvMonDeviceRepository deviceRepo = new PiEnvMonDeviceRepository(dbConnectionString);
 
-
-
-            // Test IPs to use
-            List<PiEnvMonSensorDevice> enabledDevices = deviceRepo.GetAllEnabled();
-
-            foreach(PiEnvMonSensorDevice device in enabledDevices) 
+            // Main loop
+            while (true) 
             {
-                // Reach out and try to deserialize the data from the pi
-                ConsoleWrite($"Polling {device.IPAddress}...");
+                ConsoleWrite($"Refreshing list of enabled devices...");
+                List<PiEnvMonSensorDevice> enabledDevices = deviceRepo.GetAllEnabled();
 
-                PiEnvMonSensorResponse response = await GetPiData(device.IPAddress);
-                if (response == null) {
-                    Console.WriteLine("FAIL");
-                } else {
-                    Console.Write(response.System.Name + " ");
-                    Console.Write(response.CPUSensorReading.ReadingTimestamp.ToShortDateString() + " " + response.CPUSensorReading.ReadingTimestamp.ToLongTimeString());
+                foreach(PiEnvMonSensorDevice device in enabledDevices) 
+                {
+                    // Reach out and try to deserialize the data from the pi
+                    ConsoleWrite($"Polling {device.IPAddress}...");
 
-                    if (response.TemperatureReadings.Count > 0) {
-                        Console.WriteLine(" " + response.TemperatureReadings[0].TemperatureCelsius + "C " + response.HumidityReadings[0].HumidityPercent + "%");
+                    PiEnvMonSensorResponse response = await GetPiData(device.IPAddress);
+                    if (response == null) {
+                        Console.WriteLine("FAIL");
                     } else {
-                        Console.WriteLine(" NO DATA");
+                        Console.Write(response.System.Name + " ");
+                        Console.Write(response.CPUSensorReading.ReadingTimestamp.ToShortDateString() + " " + response.CPUSensorReading.ReadingTimestamp.ToLongTimeString());
+                        
+                        // Update device info
+                        device.LastSeenUTC = DateTime.Now.ToUniversalTime();
+                        device.Name = response.System.Name;
+                        device.Model = response.System.Model;
+                        device.Description = response.System.Description;
+                        device.Serial = response.System.Serial;                            
+                        deviceRepo.Update(device);
+
+                        if (response.TemperatureReadings.Count > 0) 
+                        {   
+                            // Record temperature and humidity from all sensors
+
+                            Console.WriteLine(" " + response.TemperatureReadings[0].TemperatureCelsius + "C " + response.HumidityReadings[0].HumidityPercent + "%");
+                        } else {
+                            Console.WriteLine(" NO DATA");
+                        }
+
                     }
+
                 }
 
-            }
+                ConsoleWrite("Done!");
+                
+                // Sleep
+                ConsoleWrite($"Sleeping for {_sleepMinutes} minutes...");
+                Task.Delay(_sleepMinutes * 60 * 1000).Wait();
+            } // Main loop
 
         }
     }
