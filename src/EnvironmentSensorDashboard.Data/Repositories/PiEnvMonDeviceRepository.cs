@@ -64,6 +64,41 @@ namespace EnvironmentSensorDashboard.Data
             return returnMe;
         }
 
+        public List<PiEnvMonSensorDevice> GetAllEnabled() 
+        {
+            List<PiEnvMonSensorDevice> returnMe = new List<PiEnvMonSensorDevice>();
+            
+            using (SqlConnection connection = new SqlConnection(_dbConnectionString))
+            {
+                using (SqlCommand sqlCommand = new SqlCommand
+                {
+                    Connection = connection,
+                    CommandType = CommandType.Text,
+                    CommandText = "SELECT * FROM SensorDevices WHERE is_enabled=1;"
+                })
+                {
+                    sqlCommand.Connection.Open();
+                    SqlDataReader dbDataReader = sqlCommand.ExecuteReader();
+
+                    if (dbDataReader.HasRows)
+                    {
+                        while (dbDataReader.Read())
+                        {
+                            var u = dataReaderToObject(dbDataReader);
+                            if (u != null)
+                            {
+                                returnMe.Add(u);
+                            }
+                        }
+                    }
+
+                    sqlCommand.Connection.Close();
+                }
+            }
+
+            return returnMe;
+        }
+
 
 
     }

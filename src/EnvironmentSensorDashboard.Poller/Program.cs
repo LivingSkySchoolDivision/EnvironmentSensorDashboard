@@ -3,6 +3,11 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
+using EnvironmentSensorDashboard.Data;
+using Microsoft.Azure.KeyVault;
+using Microsoft.Azure.Services.AppAuthentication;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.AzureKeyVault;
 
 namespace EnvironmentSensorDashboard.Poller
 {
@@ -13,57 +18,59 @@ namespace EnvironmentSensorDashboard.Poller
         private static async Task<PiEnvMonSensorResponse> GetPiData(string ip)
         {
             try {
-                string results = await _httpClient.GetStringAsync(ip);
+                string results = await _httpClient.GetStringAsync($"http://{ip}");
                 return JsonSerializer.Deserialize<PiEnvMonSensorResponse>(results);
             } catch {}
 
             return null;
         }
+        
+        private static void ConsoleWrite(string message)
+        {
+            Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm K") + ": " + message);
+        }
 
         static async Task Main(string[] args)
         {
+
+            // Load configuration
+            IConfiguration configuration = new ConfigurationBuilder()
+                .AddEnvironmentVariables()
+                .Build();
+
+
+            string keyvault_endpoint = configuration["KEYVAULT_ENDPOINT"];
+            if (!string.IsNullOrEmpty(keyvault_endpoint))
+            {
+                ConsoleWrite("Loading configuration from Azure Key Vault: " + keyvault_endpoint);
+                var azureServiceTokenProvider = new AzureServiceTokenProvider();
+                var keyVaultClient = new KeyVaultClient(
+                                new KeyVaultClient.AuthenticationCallback(
+                                    azureServiceTokenProvider.KeyVaultTokenCallback));
+
+                configuration = new ConfigurationBuilder()
+                    .AddConfiguration(configuration)
+                    .AddAzureKeyVault(keyvault_endpoint, keyVaultClient, new DefaultKeyVaultSecretManager())
+                    .Build();
+            }
+
+            string dbConnectionString = configuration.GetConnectionString("InternalDatabase") ?? string.Empty;
+
+
+            // Load stuff from database
+            PiEnvMonDeviceRepository deviceRepo = new PiEnvMonDeviceRepository(dbConnectionString);
+
+
+
             // Test IPs to use
-            List<string> IPAddresses = new List<string>() {
-                "http://10.177.64.243",
-                "http://10.177.76.243",
-                "http://10.177.70.243",
-                "http://10.177.8.243",
-                "http://10.177.8.244",
-                "http://10.177.54.243",
-                "http://10.177.54.244",
-                "http://10.177.30.243",
-                "http://10.177.81.243",
-                "http://10.177.11.243",
-                "http://10.177.72.243",
-                "http://10.177.20.243",
-                "http://10.177.23.243",
-                "http://10.177.0.243",
-                "http://10.177.0.244",
-                "http://10.177.74.243",
-                "http://10.177.16.243",
-                "http://10.177.16.244",
-                "http://10.177.18.243",
-                "http://10.177.26.243",
-                "http://10.177.203.206",
-                "http://10.177.203.207",
-                "http://10.177.203.208",
-                "http://10.177.203.209",
-                "http://10.177.14.243",
-                "http://10.177.14.244",
-                "http://10.177.68.243",
-                "http://10.177.68.244",
-                "http://10.177.7.243",
-                "http://10.177.7.244",
-                "http://10.177.31.243",
-                "http://10.177.24.244"
-            };
+            List<PiEnvMonSensorDevice> enabledDevices = deviceRepo.GetAllEnabled();
 
-            // Reach out and try to deserialize the data from the pi
+            foreach(PiEnvMonSensorDevice device in enabledDevices) 
+            {
+                // Reach out and try to deserialize the data from the pi
+                ConsoleWrite($"Polling {device.IPAddress}...");
 
-
-            foreach(string ip in IPAddresses) {
-                Console.Write(ip + ": ");
-                PiEnvMonSensorResponse response = await GetPiData(ip);
+                PiEnvMonSensorResponse response = await GetPiData(device.IPAddress);
                 if (response == null) {
                     Console.WriteLine("FAIL");
                 } else {
@@ -76,8 +83,8 @@ namespace EnvironmentSensorDashboard.Poller
                         Console.WriteLine(" NO DATA");
                     }
                 }
-            }
 
+            }
 
         }
     }
