@@ -90,14 +90,21 @@ namespace EnvironmentSensorDashboard.Poller
                         device.Name = response.System.Name;
                         device.Model = response.System.Model;
                         device.Description = response.System.Description;
-                        device.Serial = response.System.Serial;                            
-                        deviceRepo.Update(device);
+                        device.Serial = response.System.Serial; 
 
                         
                         // Record CPU temp reading
                         if (response.CPUSensorReading.TemperatureCelsius > -999) 
                         {
                             response.CPUSensorReading.SystemDatabaseId = device.DatabaseId;
+
+                            // Update last known info on device record
+                            if (response.CPUSensorReading.ReadingTimestamp > device.LastCPUTempTimeUTC)
+                            {
+                                device.LastCPUTemp = response.CPUSensorReading.TemperatureCelsius;
+                                device.LastCPUTempTimeUTC = response.CPUSensorReading.ReadingTimestamp;
+                            }
+                            
                             try {
                                 cpuTempRepo.Insert(response.CPUSensorReading);
                             } catch(Exception ex) {
@@ -105,13 +112,20 @@ namespace EnvironmentSensorDashboard.Poller
                             }
                         }
 
-
                         // Record temp reading(s)
                         foreach(var reading in response.TemperatureReadings) 
                         {
                             if (reading.TemperatureCelsius > -999) 
                             {
                                 reading.SystemDatabaseId = device.DatabaseId;
+
+                                // Update last known info on device record
+                                if (reading.ReadingTimestamp > device.LastTempTimeUTC)
+                                {
+                                    device.LastTempCelsius = reading.TemperatureCelsius;
+                                    device.LastTempTimeUTC = reading.ReadingTimestamp;
+                                }
+
                                 try {
                                     tempRepo.Insert(reading);
                                 } catch(Exception ex) {
@@ -127,6 +141,14 @@ namespace EnvironmentSensorDashboard.Poller
                             if (reading.HumidityPercent > -999) 
                             {
                                 reading.SystemDatabaseId = device.DatabaseId;
+
+                                // Update last known info on device record
+                                if (reading.ReadingTimestamp > device.LastHumidityTimeUTC)
+                                {
+                                    device.LastHumidityPercent = reading.HumidityPercent;
+                                    device.LastHumidityTimeUTC = reading.ReadingTimestamp;
+                                }
+
                                 try {
                                     humidityRepo.Insert(reading);
                                 } catch(Exception ex) {
@@ -134,6 +156,13 @@ namespace EnvironmentSensorDashboard.Poller
                                 }
                             }
                         }
+
+                        // Update the device record 
+                        try {
+                            deviceRepo.Update(device);
+                        } catch(Exception ex) {
+                            ConsoleWrite("EXCEPTION: " + ex.Message);
+                        }                       
                     }
                 }
 

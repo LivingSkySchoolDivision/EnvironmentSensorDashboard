@@ -18,7 +18,10 @@ namespace EnvironmentSensorDashboard.API
     {
         public Startup(IConfiguration configuration)
         {
-            Configuration = configuration;
+            Configuration = new ConfigurationBuilder()
+                .AddConfiguration(configuration)
+                .AddEnvironmentVariables()
+                .Build();
         }
 
         public IConfiguration Configuration { get; }
@@ -32,6 +35,10 @@ namespace EnvironmentSensorDashboard.API
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "EnvironmentSensorDashboard.API", Version = "v1" });
             });
+            
+            services.AddSingleton<PiEnvMonSensorDeviceService>();
+
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

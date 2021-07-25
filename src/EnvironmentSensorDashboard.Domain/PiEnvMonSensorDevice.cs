@@ -15,5 +15,13 @@ namespace EnvironmentSensorDashboard
         public string IPAddress { get; set; }
         public DateTime LastSeenUTC { get;set; }
         public bool IsEnabled { get; set; }
+
+        public DateTime LastCPUTempTimeUTC { get; set; }
+        public DateTime LastTempTimeUTC { get; set; }
+        public DateTime LastHumidityTimeUTC { get; set; }
+
+        public decimal LastCPUTemp { get; set; }
+        public decimal LastTempCelsius { get; set; }
+        public decimal LastHumidityPercent { get; set; }
     }
 }
