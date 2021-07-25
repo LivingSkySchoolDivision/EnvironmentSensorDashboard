@@ -7,6 +7,20 @@ namespace EnvironmentSensorDashboard
 {
     public static class ParserExtensions
     {
+
+        public static decimal ToDecimal(this string thisString)
+        {
+            decimal returnMe = 0;
+
+            if (decimal.TryParse(thisString, out returnMe))
+            {
+                return returnMe;
+            }
+
+            return 0;
+        }
+
+
         public static int ToInt(this string thisString)
         {
             int returnMe = 0;

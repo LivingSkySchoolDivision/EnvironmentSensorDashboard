@@ -7,6 +7,7 @@ namespace EnvironmentSensorDashboard
 {
     public class PiEnvMonTemperatureSensorReading
     {
+        public int SystemDatabaseId { get; set; }
         public string SystemId { get; set; }
         public string SensorId { get; set; }
         public decimal TemperatureCelsius { get; set; }     

@@ -8,30 +8,30 @@ using Microsoft.Data.SqlClient;
 
 namespace EnvironmentSensorDashboard.Data
 {
-    public class PiEnvMonCPUSensorDataRespository
+    public class PiEnvMonHumiditySensorDataRepository
     {
         private readonly string _dbConnectionString;       
 
-        public PiEnvMonCPUSensorDataRespository(string dbConnectionString)
+        public PiEnvMonHumiditySensorDataRepository(string dbConnectionString)
         {
             _dbConnectionString = dbConnectionString;
         }
 
-        private PiEnvMonCPUSensorReading dataReaderToObject(SqlDataReader dataReader)
+        private PiEnvMonHumiditySensorReading dataReaderToObject(SqlDataReader dataReader)
         {
-            return new PiEnvMonCPUSensorReading()
+            return new PiEnvMonHumiditySensorReading()
             {
                 SystemDatabaseId = dataReader["system_database_id"].ToString().Trim().ToInt(),
                 SystemId = dataReader["system_id"].ToString().Trim(),
                 SensorId = dataReader["sensor_id"].ToString().Trim(),
                 ReadingTimestamp = dataReader["scan_time_utc"].ToString().Trim().ToDateTime(),
-                TemperatureCelsius = dataReader["temperature_celsius"].ToString().Trim().ToDecimal()
+                HumidityPercent = dataReader["humidity_percent"].ToString().Trim().ToDecimal()
             };
         }
 
-        public List<PiEnvMonCPUSensorReading> GetForSensor(PiEnvMonSensorDevice System, DateTime fromUTC, DateTime toUTC) 
+        public List<PiEnvMonHumiditySensorReading> GetForSensor(PiEnvMonSensorDevice System, DateTime fromUTC, DateTime toUTC) 
         {
-            List<PiEnvMonCPUSensorReading> returnMe = new List<PiEnvMonCPUSensorReading>();
+            List<PiEnvMonHumiditySensorReading> returnMe = new List<PiEnvMonHumiditySensorReading>();
             
             using (SqlConnection connection = new SqlConnection(_dbConnectionString))
             {
@@ -39,7 +39,7 @@ namespace EnvironmentSensorDashboard.Data
                 {
                     Connection = connection,
                     CommandType = CommandType.Text,
-                    CommandText = "SELECT * FROM CPUSensorReadings WHERE system_database_id=@SYSTEMID AND scan_time_utc>=@DATEFROM AND scan_time_utc<=@DATETO;"
+                    CommandText = "SELECT * FROM HumiditySensorReadings WHERE system_database_id=@SYSTEMID AND scan_time_utc>=@DATEFROM AND scan_time_utc<=@DATETO;"
                 })
                 {
                     sqlCommand.Parameters.AddWithValue("SYSTEMID", System.DatabaseId);
@@ -68,7 +68,7 @@ namespace EnvironmentSensorDashboard.Data
         }
 
 
-        public void Insert(PiEnvMonCPUSensorReading NewReading) 
+        public void Insert(PiEnvMonHumiditySensorReading NewReading) 
         {            
             if (NewReading.SystemDatabaseId > 0) {
                 using (SqlConnection connection = new SqlConnection(_dbConnectionString))
@@ -77,14 +77,14 @@ namespace EnvironmentSensorDashboard.Data
                     {
                         Connection = connection,
                         CommandType = CommandType.Text,
-                        CommandText = "INSERT INTO CPUSensorReadings(scan_time_utc,system_database_id,system_id,sensor_id,temperature_celsius) VALUES(@SCANTIME, @SYSDBID, @SYSID, @SENID, @TEMPC);"
+                        CommandText = "INSERT INTO HumiditySensorReadings(scan_time_utc,system_database_id,system_id,sensor_id,humidity_percent) VALUES(@SCANTIME, @SYSDBID, @SYSID, @SENID, @HUMID);"
                     })
                     {
                         sqlCommand.Parameters.AddWithValue("SCANTIME", NewReading.ReadingTimestamp);
                         sqlCommand.Parameters.AddWithValue("SYSDBID", NewReading.SystemDatabaseId);
                         sqlCommand.Parameters.AddWithValue("SYSID", NewReading.SystemId);
                         sqlCommand.Parameters.AddWithValue("SENID", NewReading.SensorId);
-                        sqlCommand.Parameters.AddWithValue("TEMPC", NewReading.TemperatureCelsius);
+                        sqlCommand.Parameters.AddWithValue("HUMID", NewReading.HumidityPercent);
                         sqlCommand.Connection.Open();
                         sqlCommand.ExecuteNonQuery();
                         sqlCommand.Connection.Close();

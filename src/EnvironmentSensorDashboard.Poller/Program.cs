@@ -62,11 +62,15 @@ namespace EnvironmentSensorDashboard.Poller
 
 
             // Load stuff from database
-            PiEnvMonDeviceRepository deviceRepo = new PiEnvMonDeviceRepository(dbConnectionString);
 
             // Main loop
             while (true) 
             {
+                PiEnvMonDeviceRepository deviceRepo = new PiEnvMonDeviceRepository(dbConnectionString);
+                PiEnvMonCPUSensorDataRespository cpuTempRepo = new PiEnvMonCPUSensorDataRespository(dbConnectionString);
+                PiEnvMonTemperatureSensorReadingRepository tempRepo = new PiEnvMonTemperatureSensorReadingRepository(dbConnectionString);
+                PiEnvMonHumiditySensorDataRepository humidityRepo = new PiEnvMonHumiditySensorDataRepository(dbConnectionString);
+
                 ConsoleWrite($"Refreshing list of enabled devices...");
                 List<PiEnvMonSensorDevice> enabledDevices = deviceRepo.GetAllEnabled();
 
@@ -79,9 +83,8 @@ namespace EnvironmentSensorDashboard.Poller
                     if (response == null) {
                         Console.WriteLine("FAIL");
                     } else {
-                        Console.Write(response.System.Name + " ");
-                        Console.Write(response.CPUSensorReading.ReadingTimestamp.ToShortDateString() + " " + response.CPUSensorReading.ReadingTimestamp.ToLongTimeString());
-                        
+                        ConsoleWrite($"Response from {response.System.Name}...");
+                                                
                         // Update device info
                         device.LastSeenUTC = DateTime.Now.ToUniversalTime();
                         device.Name = response.System.Name;
@@ -90,17 +93,48 @@ namespace EnvironmentSensorDashboard.Poller
                         device.Serial = response.System.Serial;                            
                         deviceRepo.Update(device);
 
-                        if (response.TemperatureReadings.Count > 0) 
-                        {   
-                            // Record temperature and humidity from all sensors
-
-                            Console.WriteLine(" " + response.TemperatureReadings[0].TemperatureCelsius + "C " + response.HumidityReadings[0].HumidityPercent + "%");
-                        } else {
-                            Console.WriteLine(" NO DATA");
+                        
+                        // Record CPU temp reading
+                        if (response.CPUSensorReading.TemperatureCelsius > -999) 
+                        {
+                            response.CPUSensorReading.SystemDatabaseId = device.DatabaseId;
+                            try {
+                                cpuTempRepo.Insert(response.CPUSensorReading);
+                            } catch(Exception ex) {
+                                ConsoleWrite("EXCEPTION: " + ex.Message);
+                            }
                         }
 
-                    }
 
+                        // Record temp reading(s)
+                        foreach(var reading in response.TemperatureReadings) 
+                        {
+                            if (reading.TemperatureCelsius > -999) 
+                            {
+                                reading.SystemDatabaseId = device.DatabaseId;
+                                try {
+                                    tempRepo.Insert(reading);
+                                } catch(Exception ex) {
+                                    ConsoleWrite("EXCEPTION: " + ex.Message);
+                                }
+                            }
+
+                        }
+
+                        // Record humidity reading(s)
+                        foreach(var reading in response.HumidityReadings) 
+                        {
+                            if (reading.HumidityPercent > -999) 
+                            {
+                                reading.SystemDatabaseId = device.DatabaseId;
+                                try {
+                                    humidityRepo.Insert(reading);
+                                } catch(Exception ex) {
+                                    ConsoleWrite("EXCEPTION: " + ex.Message);
+                                }
+                            }
+                        }
+                    }
                 }
 
                 ConsoleWrite("Done!");

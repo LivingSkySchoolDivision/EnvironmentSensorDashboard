@@ -8,18 +8,18 @@ using Microsoft.Data.SqlClient;
 
 namespace EnvironmentSensorDashboard.Data
 {
-    public class PiEnvMonCPUSensorDataRespository
+    public class PiEnvMonTemperatureSensorReadingRepository
     {
         private readonly string _dbConnectionString;       
 
-        public PiEnvMonCPUSensorDataRespository(string dbConnectionString)
+        public PiEnvMonTemperatureSensorReadingRepository(string dbConnectionString)
         {
             _dbConnectionString = dbConnectionString;
         }
 
-        private PiEnvMonCPUSensorReading dataReaderToObject(SqlDataReader dataReader)
+        private PiEnvMonTemperatureSensorReading dataReaderToObject(SqlDataReader dataReader)
         {
-            return new PiEnvMonCPUSensorReading()
+            return new PiEnvMonTemperatureSensorReading()
             {
                 SystemDatabaseId = dataReader["system_database_id"].ToString().Trim().ToInt(),
                 SystemId = dataReader["system_id"].ToString().Trim(),
@@ -29,9 +29,9 @@ namespace EnvironmentSensorDashboard.Data
             };
         }
 
-        public List<PiEnvMonCPUSensorReading> GetForSensor(PiEnvMonSensorDevice System, DateTime fromUTC, DateTime toUTC) 
+        public List<PiEnvMonTemperatureSensorReading> GetForSensor(PiEnvMonSensorDevice System, DateTime fromUTC, DateTime toUTC) 
         {
-            List<PiEnvMonCPUSensorReading> returnMe = new List<PiEnvMonCPUSensorReading>();
+            List<PiEnvMonTemperatureSensorReading> returnMe = new List<PiEnvMonTemperatureSensorReading>();
             
             using (SqlConnection connection = new SqlConnection(_dbConnectionString))
             {
@@ -39,7 +39,7 @@ namespace EnvironmentSensorDashboard.Data
                 {
                     Connection = connection,
                     CommandType = CommandType.Text,
-                    CommandText = "SELECT * FROM CPUSensorReadings WHERE system_database_id=@SYSTEMID AND scan_time_utc>=@DATEFROM AND scan_time_utc<=@DATETO;"
+                    CommandText = "SELECT * FROM TemperatureSensorReadings WHERE system_database_id=@SYSTEMID AND scan_time_utc>=@DATEFROM AND scan_time_utc<=@DATETO;"
                 })
                 {
                     sqlCommand.Parameters.AddWithValue("SYSTEMID", System.DatabaseId);
@@ -68,7 +68,7 @@ namespace EnvironmentSensorDashboard.Data
         }
 
 
-        public void Insert(PiEnvMonCPUSensorReading NewReading) 
+        public void Insert(PiEnvMonTemperatureSensorReading NewReading) 
         {            
             if (NewReading.SystemDatabaseId > 0) {
                 using (SqlConnection connection = new SqlConnection(_dbConnectionString))
@@ -77,7 +77,7 @@ namespace EnvironmentSensorDashboard.Data
                     {
                         Connection = connection,
                         CommandType = CommandType.Text,
-                        CommandText = "INSERT INTO CPUSensorReadings(scan_time_utc,system_database_id,system_id,sensor_id,temperature_celsius) VALUES(@SCANTIME, @SYSDBID, @SYSID, @SENID, @TEMPC);"
+                        CommandText = "INSERT INTO TemperatureSensorReadings(scan_time_utc,system_database_id,system_id,sensor_id,temperature_celsius) VALUES(@SCANTIME, @SYSDBID, @SYSID, @SENID, @TEMPC);"
                     })
                     {
                         sqlCommand.Parameters.AddWithValue("SCANTIME", NewReading.ReadingTimestamp);
