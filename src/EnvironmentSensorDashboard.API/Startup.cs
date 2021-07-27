@@ -35,7 +35,18 @@ namespace EnvironmentSensorDashboard.API
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "EnvironmentSensorDashboard.API", Version = "v1" });
             });
-            
+
+            // Configure CORS to allow all requests. 
+            // This isn't secure, but I want anything to be able to query this API without issue.
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CORS-ALL",
+                    builder =>
+                    {
+                        builder.WithOrigins("*").AllowAnyHeader().AllowAnyMethod();
+                    });
+            });
+
             services.AddSingleton<PiEnvMonSensorDeviceService>();
 
 
@@ -52,6 +63,9 @@ namespace EnvironmentSensorDashboard.API
             }
 
             app.UseHttpsRedirection();
+
+            
+            app.UseCors("CORS-ALL");
 
             app.UseRouting();
 
