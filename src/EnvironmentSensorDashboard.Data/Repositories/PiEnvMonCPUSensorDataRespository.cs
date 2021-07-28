@@ -80,7 +80,7 @@ namespace EnvironmentSensorDashboard.Data
                         CommandText = "INSERT INTO CPUSensorReadings(scan_time_utc,system_database_id,system_id,sensor_id,temperature_celsius) VALUES(@SCANTIME, @SYSDBID, @SYSID, @SENID, @TEMPC);"
                     })
                     {
-                        sqlCommand.Parameters.AddWithValue("SCANTIME", NewReading.ReadingTimestamp);
+                        sqlCommand.Parameters.AddWithValue("SCANTIME", NewReading.ReadingTimestamp.ToSQLSafeDate());
                         sqlCommand.Parameters.AddWithValue("SYSDBID", NewReading.SystemDatabaseId);
                         sqlCommand.Parameters.AddWithValue("SYSID", NewReading.SystemId);
                         sqlCommand.Parameters.AddWithValue("SENID", NewReading.SensorId);

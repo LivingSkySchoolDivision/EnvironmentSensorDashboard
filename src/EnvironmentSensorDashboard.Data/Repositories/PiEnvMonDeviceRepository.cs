@@ -33,7 +33,11 @@ namespace EnvironmentSensorDashboard.Data
                 LastTempCelsius = dataReader["last_temp_celsius"].ToString().Trim().ToDecimal(),
                 LastTempTimeUTC = dataReader["last_temp_time"].ToString().Trim().ToDateTime(),
                 LastHumidityPercent = dataReader["last_humidity_percent"].ToString().Trim().ToDecimal(),
-                LastHumidityTimeUTC = dataReader["last_humidity_time"].ToString().Trim().ToDateTime()
+                LastHumidityTimeUTC = dataReader["last_humidity_time"].ToString().Trim().ToDateTime(),
+                LastSuccessUTC = dataReader["last_success_utc"].ToString().Trim().ToDateTime(),
+                LastFailureUTC = dataReader["last_failure_utc"].ToString().Trim().ToDateTime(),
+                WasLastPollSuccessful = dataReader["last_poll_was_succesful"].ToString().Trim().ToBool(),
+                LastScanAttemptUTC = dataReader["last_scan_attempt_utc"].ToString().Trim().ToDateTime(),                
             };
         }
 
@@ -123,13 +127,16 @@ namespace EnvironmentSensorDashboard.Data
                             "description=@DDESC, " +
                             "model=@DMODEL, " +
                             "serial=@DSERIAL, " +
-                            "last_seen_utc=@DLASTSEEN, " +
+                            "last_scan_attempt_utc=@DLASTATTEMPT, " +
                             "last_cpu_temp_celsius=@LASTCPUTEMP, " +
                             "last_cpu_temp_time=@LASTCPUTEMPTIME, " +
                             "last_temp_celsius=@LASTTEMP, " +
                             "last_temp_time=@LASTTEMPTIME, " +
                             "last_humidity_percent=@LASTHUMID, " +
-                            "last_humidity_time=@LASTHUMIDTIME " +
+                            "last_humidity_time=@LASTHUMIDTIME, " +
+                            "last_success_utc=@LASTSUCC, " +
+                            "last_failure_utc=@LASTFAIL, " +
+                            "last_poll_was_succesful=@WASSUCC " +
                         "WHERE id=@DEVICEID;"
                 })
                 {
@@ -140,14 +147,18 @@ namespace EnvironmentSensorDashboard.Data
                     sqlCommand.Parameters.AddWithValue("DDESC", device.Description);
                     sqlCommand.Parameters.AddWithValue("DMODEL", device.Model);
                     sqlCommand.Parameters.AddWithValue("DSERIAL", device.Serial);
-                    sqlCommand.Parameters.AddWithValue("DLASTSEEN", device.LastSeenUTC);
+                    sqlCommand.Parameters.AddWithValue("DLASTATTEMPT", device.LastScanAttemptUTC.ToSQLSafeDate());
                     
                     sqlCommand.Parameters.AddWithValue("LASTCPUTEMP", device.LastCPUTemp);
-                    sqlCommand.Parameters.AddWithValue("LASTCPUTEMPTIME", device.LastCPUTempTimeUTC);
+                    sqlCommand.Parameters.AddWithValue("LASTCPUTEMPTIME", device.LastCPUTempTimeUTC.ToSQLSafeDate());
                     sqlCommand.Parameters.AddWithValue("LASTTEMP", device.LastTempCelsius);
-                    sqlCommand.Parameters.AddWithValue("LASTTEMPTIME", device.LastTempTimeUTC);
+                    sqlCommand.Parameters.AddWithValue("LASTTEMPTIME", device.LastTempTimeUTC.ToSQLSafeDate());
                     sqlCommand.Parameters.AddWithValue("LASTHUMID", device.LastHumidityPercent);
-                    sqlCommand.Parameters.AddWithValue("LASTHUMIDTIME", device.LastHumidityTimeUTC);
+                    sqlCommand.Parameters.AddWithValue("LASTHUMIDTIME", device.LastHumidityTimeUTC.ToSQLSafeDate());
+                    
+                    sqlCommand.Parameters.AddWithValue("LASTSUCC", device.LastSuccessUTC.ToSQLSafeDate());
+                    sqlCommand.Parameters.AddWithValue("LASTFAIL", device.LastFailureUTC.ToSQLSafeDate());
+                    sqlCommand.Parameters.AddWithValue("WASSUCC", device.WasLastPollSuccessful);
                     sqlCommand.Connection.Open();
                     sqlCommand.ExecuteNonQuery();
                     sqlCommand.Connection.Close();

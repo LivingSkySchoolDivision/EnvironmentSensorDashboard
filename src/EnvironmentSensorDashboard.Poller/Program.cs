@@ -79,14 +79,19 @@ namespace EnvironmentSensorDashboard.Poller
                     // Reach out and try to deserialize the data from the pi
                     ConsoleWrite($"Polling {device.IPAddress}...");
 
+                    device.LastScanAttemptUTC = DateTime.Now.ToUniversalTime();
+
                     PiEnvMonSensorResponse response = await GetPiData(device.IPAddress);
                     if (response == null) {
                         Console.WriteLine("FAIL");
+                        device.WasLastPollSuccessful = false;
+                        device.LastFailureUTC = DateTime.Now.ToUniversalTime();
                     } else {
-                        ConsoleWrite($"Response from {response.System.Name}...");
+                        ConsoleWrite($"> Response from {response.System.Name}...");
+                        device.WasLastPollSuccessful = true;
+                        device.LastSuccessUTC = DateTime.Now.ToUniversalTime();
                                                 
                         // Update device info
-                        device.LastSeenUTC = DateTime.Now.ToUniversalTime();
                         device.Name = response.System.Name;
                         device.Model = response.System.Model;
                         device.Description = response.System.Description;
@@ -155,15 +160,16 @@ namespace EnvironmentSensorDashboard.Poller
                                     ConsoleWrite("EXCEPTION: " + ex.Message);
                                 }
                             }
-                        }
-
-                        // Update the device record 
-                        try {
-                            deviceRepo.Update(device);
-                        } catch(Exception ex) {
-                            ConsoleWrite("EXCEPTION: " + ex.Message);
-                        }                       
+                        }                                              
                     }
+
+                    // Update the device record 
+                    try {
+                        ConsoleWrite("Updating device " + device.DatabaseId + "...");
+                        deviceRepo.Update(device);
+                    } catch(Exception ex) {
+                        ConsoleWrite("EXCEPTION: " + ex.Message);
+                    } 
                 }
 
                 ConsoleWrite("Done!");
