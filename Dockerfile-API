@@ -7,9 +7,9 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
 WORKDIR /src
-COPY ["src/EnvironmentSensorDashboard.API/EnvironmentSensorDashboard.API.csproj", "src/EnvironmentSensorDashboard.API/"]
-COPY ["src/EnvironmentSensorDashboard.Data/EnvironmentSensorDashboard.Data.csproj", "src/EnvironmentSensorDashboard.Data/"]
-COPY ["src/EnvironmentSensorDashboard.Domain/EnvironmentSensorDashboard.Domain.csproj", "src/EnvironmentSensorDashboard.Domain/"]
+COPY ["EnvironmentSensorDashboard.API/EnvironmentSensorDashboard.API.csproj", "EnvironmentSensorDashboard.API/"]
+COPY ["EnvironmentSensorDashboard.Data/EnvironmentSensorDashboard.Data.csproj", "EnvironmentSensorDashboard.Data/"]
+COPY ["EnvironmentSensorDashboard.Domain/EnvironmentSensorDashboard.Domain.csproj", "EnvironmentSensorDashboard.Domain/"]
 RUN dotnet restore "EnvironmentSensorDashboard.API/EnvironmentSensorDashboard.API.csproj"
 COPY . .
 WORKDIR "/src/EnvironmentSensorDashboard.API"
