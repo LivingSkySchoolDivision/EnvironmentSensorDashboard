@@ -4,6 +4,7 @@
 *.docx
 
 .vs
+.vscode
 
 # User-specific files
 *.suo

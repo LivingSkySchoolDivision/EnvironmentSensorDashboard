@@ -21,6 +21,7 @@ namespace EnvironmentSensorDashboard.API
             Configuration = new ConfigurationBuilder()
                 .AddConfiguration(configuration)
                 .AddEnvironmentVariables()
+                .AddUserSecrets<Program>()
                 .Build();
         }
 

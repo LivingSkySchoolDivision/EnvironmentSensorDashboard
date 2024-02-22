@@ -4,10 +4,8 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using EnvironmentSensorDashboard.Data;
-using Microsoft.Azure.KeyVault;
-using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.AzureKeyVault;
+using Microsoft.Extensions.Configuration.UserSecrets;
 
 namespace EnvironmentSensorDashboard.Poller
 {
@@ -40,23 +38,9 @@ namespace EnvironmentSensorDashboard.Poller
             // Load configuration
             IConfiguration configuration = new ConfigurationBuilder()
                 .AddEnvironmentVariables()
+                .AddUserSecrets<Program>()
                 .Build();
-
-
-            string keyvault_endpoint = configuration["KEYVAULT_ENDPOINT"];
-            if (!string.IsNullOrEmpty(keyvault_endpoint))
-            {
-                ConsoleWrite("Loading configuration from Azure Key Vault: " + keyvault_endpoint);
-                var azureServiceTokenProvider = new AzureServiceTokenProvider();
-                var keyVaultClient = new KeyVaultClient(
-                                new KeyVaultClient.AuthenticationCallback(
-                                    azureServiceTokenProvider.KeyVaultTokenCallback));
-
-                configuration = new ConfigurationBuilder()
-                    .AddConfiguration(configuration)
-                    .AddAzureKeyVault(keyvault_endpoint, keyVaultClient, new DefaultKeyVaultSecretManager())
-                    .Build();
-            }
+        
 
             string dbConnectionString = configuration.GetConnectionString("InternalDatabase") ?? string.Empty;
 
@@ -96,6 +80,26 @@ namespace EnvironmentSensorDashboard.Poller
                         device.Model = response.System.Model;
                         device.Description = response.System.Description;
                         device.Serial = response.System.Serial; 
+
+                        Console.WriteLine($"   CPUSensorReading.TemperatureCelsius: {response.CPUSensorReading.TemperatureCelsius}");
+                        Console.WriteLine($"   CPUSensorReading.SystemDatabaseId: {response.CPUSensorReading.SystemDatabaseId}");
+                        Console.WriteLine($"   device.LastCPUTemp: {device.LastCPUTemp}");
+                        Console.WriteLine($"   device.LastCPUTempTimeUTC: {device.LastCPUTempTimeUTC}");
+
+                        foreach (var reading in response.TemperatureReadings)
+                        {
+                            Console.WriteLine($"    reading.TemperatureCelsius: {reading.TemperatureCelsius}");
+                            Console.WriteLine($"    reading.SystemDatabaseId: {reading.SystemDatabaseId}");
+                            Console.WriteLine($"    device.LastTempCelsius: {device.LastTempCelsius}");
+                            Console.WriteLine($"    device.LastTempTimeUTC: {device.LastTempTimeUTC}");
+                        }
+
+                        foreach (var reading in response.HumidityReadings)
+                        {
+                            Console.WriteLine($"    reading.HumidityPercent: {reading.HumidityPercent}");
+                            Console.WriteLine($"    reading.SystemDatabaseId: {reading.SystemDatabaseId}");
+                        }
+                                                
 
                         
                         // Record CPU temp reading
