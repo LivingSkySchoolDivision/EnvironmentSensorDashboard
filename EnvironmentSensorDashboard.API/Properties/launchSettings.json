@@ -22,7 +22,6 @@
       "launchBrowser": true,
       "launchUrl": "swagger",
       "environmentVariables": {
-        "KEYVAULT_ENDPOINT": "https://lssd-environmentmonitors.vault.azure.net/",
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": "true",
